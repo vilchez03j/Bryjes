@@ -32,9 +32,56 @@
             height: 100vh;
             z-index: 1;
         }
+        #poem {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.9);
+            font-family: 'Arial', sans-serif;
+            font-size: 1.3em;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1.8;
+            width: 80%;
+            max-width: 600px;
+            z-index: 3;
+            pointer-events: none;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.8),
+                         0 0 30px rgba(255, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+        }
     </style>
 </head>
 <body>
+    <div id="poem">
+        En cada latido de mi corazón,<br>
+        encuentro el eco de tu nombre.<br>
+        En cada suspiro de la noche,<br>
+        veo el brillo de tus ojos.<br><br>
+        
+        Eres mi sueño más dulce,<br>
+        mi realidad más hermosa.<br>
+        En cada momento que compartimos,<br>
+        descubro nuevas razones para amarte.<br><br>
+        
+        Como las estrellas en el cielo,<br>
+        tu amor ilumina mi vida.<br>
+        Como el sol cada mañana,<br>
+        tu sonrisa me da esperanza.<br><br>
+        
+        Eres mi presente, mi futuro,<br>
+        mi amor eterno, mi destino.<br>
+        Contigo, cada día es una aventura,<br>
+        cada momento, un tesoro.<br><br>
+        
+        Te amo más que ayer,<br>
+        menos que mañana,<br>
+        pero siempre infinitamente.
+    </div>
     <canvas id="matrix"></canvas>
     <canvas id="fireworks"></canvas>
     <script>
@@ -130,23 +177,54 @@
     let fireworkBursts = [];
 
     function createFirework(x, y) {
-        const burst = [];
-        const word = words[Math.floor(Math.random() * words.length)];
-        const color = '#ff1a1a';
-        const lines = 18;
-        for (let i = 0; i < lines; i++) {
-            const angle = (2 * Math.PI / lines) * i;
-            burst.push({
-                x, y,
-                angle,
-                speed: 3 + Math.random() * 2,
-                word,
-                color,
-                alpha: 1,
-                distance: 0
-            });
-        }
+        const burst = [{
+            x,
+            y,
+            alpha: 1,
+            scale: 0,
+            maxScale: 2.5, // Corazón más grande
+            glowSize: 0,
+            maxGlowSize: 3 // Efecto de destello más grande
+        }];
         fireworkBursts.push(burst);
+    }
+
+    function drawHeart(ctx, x, y, scale, glowSize) {
+        ctx.save();
+        ctx.translate(x, y);
+        
+        // Dibujar el destello exterior
+        const glowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 200 * glowSize);
+        glowGradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+        glowGradient.addColorStop(0.3, 'rgba(255, 102, 102, 0.6)');
+        glowGradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+        
+        ctx.fillStyle = glowGradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, 200 * glowSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Dibujar el corazón
+        ctx.scale(scale, scale);
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 100);
+        gradient.addColorStop(0, '#ffffff');
+        gradient.addColorStop(0.3, '#ff6666');
+        gradient.addColorStop(1, '#ff0000');
+        
+        ctx.fillStyle = gradient;
+        ctx.shadowColor = '#ff6666';
+        ctx.shadowBlur = 30;
+        
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        for (let t = 0; t <= Math.PI * 2; t += 0.01) {
+            const heartX = 16 * Math.pow(Math.sin(t), 3);
+            const heartY = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+            ctx.lineTo(heartX, heartY);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
     }
 
     function drawFireworks() {
@@ -154,28 +232,26 @@
         for (let b = fireworkBursts.length - 1; b >= 0; b--) {
             const burst = fireworkBursts[b];
             let allFaded = true;
+            
             for (let p of burst) {
-                const px = p.x + Math.cos(p.angle) * p.distance;
-                const py = p.y + Math.sin(p.angle) * p.distance;
-                fctx.save();
-                fctx.font = `bold 24px Arial`;
-                fctx.textAlign = 'center';
                 fctx.globalAlpha = p.alpha;
-                // Degradado radial rojo para el texto
-                const grad = fctx.createLinearGradient(px-20, py-20, px+20, py+20);
-                grad.addColorStop(0, '#ff0000');
-                grad.addColorStop(0.3, '#ff1a1a');
-                grad.addColorStop(0.7, '#cc0000');
-                grad.addColorStop(1, '#990000');
-                fctx.fillStyle = grad;
-                fctx.shadowColor = '#ff6666';
-                fctx.shadowBlur = 16;
-                fctx.fillText(p.word, px, py);
-                fctx.restore();
-                p.distance += p.speed;
-                p.alpha -= 0.025;
+                
+                // Dibujar el corazón con el destello
+                drawHeart(fctx, p.x, p.y, p.scale, p.glowSize);
+                
+                // Animar el corazón y el destello
+                if (p.scale < p.maxScale) {
+                    p.scale += 0.15;
+                }
+                if (p.glowSize < p.maxGlowSize) {
+                    p.glowSize += 0.2;
+                } else {
+                    p.alpha -= 0.03;
+                }
+                
                 if (p.alpha > 0) allFaded = false;
             }
+            
             if (allFaded) fireworkBursts.splice(b, 1);
         }
         requestAnimationFrame(drawFireworks);
