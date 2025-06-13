@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bryan & Jesica</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            overflow: hidden;
+            cursor: pointer;
+            height: 100vh;
+        }
+        canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 2;
+        }
+        #matrix {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix"></canvas>
+    <canvas id="fireworks"></canvas>
+    <script>
+    // Palabras románticas
+    const words = [
+        'TE AMO', 'AMOR', 'JESICA', 'BONITA', 'TE EXTRAÑO',
+        'MI VIDA', 'MI AMOR', 'MI TODO', 'MI REINA', 'MI CORAZÓN',
+        'MI PRINCESA', 'MI AMADA', 'MI DESTINO', 'MI SUEÑO', 'MI FELICIDAD',
+        'ERES MÍA', 'MI BELLEZA', 'MI TESORO', 'MI PASIÓN', 'MI DESEO',
+        'MI AMANTE', 'MI LOCURA', 'MI OBSESIÓN', 'MI TENTACIÓN', 'MI DELIRIO',
+        'MI SEDUCCIÓN', 'MI FASCINACIÓN', 'MI ENCANTO', 'MI EMBRUJO', 'MI HECHIZO',
+        'MI TENTACIÓN', 'MI DESEO', 'MI PASIÓN', 'MI LOCURA', 'MI OBSESIÓN',
+        'TE DESEO', 'TE NECESITO', 'TE ADORO', 'TE ANHELO', 'TE CELO',
+        'MI AMOR ETERNO', 'MI AMOR VERDADERO', 'MI AMOR INFINITO', 'MI AMOR PERFECTO',
+        'MI AMOR ÚNICO', 'MI AMOR ESPECIAL', 'MI AMOR DIVINO', 'MI AMOR CELESTIAL'
+    ];
+
+    // --- Matrix Effect ---
+    const matrix = document.getElementById('matrix');
+    const ctx = matrix.getContext('2d');
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    matrix.width = width;
+    matrix.height = height;
+
+    // Configuración de columnas
+    const fontSize = 18;
+    let columns = Math.floor(width / fontSize);
+    let drops = [];
+    let columnWords = [];
+    function setupColumns() {
+        columns = Math.floor(window.innerWidth / fontSize);
+        drops = [];
+        columnWords = [];
+        for (let i = 0; i < columns; i++) {
+            drops[i] = Math.random() * -20;
+            columnWords[i] = words[Math.floor(Math.random() * words.length)];
+        }
+    }
+    setupColumns();
+
+    function drawMatrix() {
+        // Fondo negro con transparencia para el rastro
+        ctx.fillStyle = 'rgba(0,0,0,0.18)';
+        ctx.fillRect(0, 0, width, height);
+        ctx.font = `bold ${fontSize}px Arial`;
+        ctx.textAlign = 'center';
+        for (let i = 0; i < columns; i++) {
+            // Palabra fija por columna
+            const text = columnWords[i];
+            // Degradado vertical rojo
+            const grad = ctx.createLinearGradient(0, drops[i] * fontSize, 0, (drops[i] + 1) * fontSize);
+            grad.addColorStop(0, '#ff0000');
+            grad.addColorStop(0.2, '#ff1a1a');
+            grad.addColorStop(0.5, '#cc0000');
+            grad.addColorStop(1, '#990000');
+            ctx.fillStyle = grad;
+            ctx.shadowColor = '#ff6666';
+            ctx.shadowBlur = 16;
+            ctx.globalAlpha = 0.97;
+            ctx.fillText(text, i * fontSize + fontSize/2, drops[i] * fontSize);
+            ctx.globalAlpha = 1;
+            ctx.shadowBlur = 0;
+            // Reiniciar columna si llega al fondo
+            if (drops[i] * fontSize > height && Math.random() > 0.975) {
+                drops[i] = 0;
+                columnWords[i] = words[Math.floor(Math.random() * words.length)]; // Cambia palabra solo al reiniciar
+            }
+            drops[i] += 1;
+        }
+    }
+    setInterval(drawMatrix, 50);
+
+    window.addEventListener('resize', () => {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        matrix.width = width;
+        matrix.height = height;
+        setupColumns();
+    });
+
+    // --- Fireworks Effect ---
+    const fireworks = document.getElementById('fireworks');
+    const fctx = fireworks.getContext('2d');
+    fireworks.width = width;
+    fireworks.height = height;
+
+    window.addEventListener('resize', () => {
+        fireworks.width = window.innerWidth;
+        fireworks.height = window.innerHeight;
+    });
+
+    let fireworkBursts = [];
+
+    function createFirework(x, y) {
+        const burst = [];
+        const word = words[Math.floor(Math.random() * words.length)];
+        const color = '#ff1a1a';
+        const lines = 18;
+        for (let i = 0; i < lines; i++) {
+            const angle = (2 * Math.PI / lines) * i;
+            burst.push({
+                x, y,
+                angle,
+                speed: 3 + Math.random() * 2,
+                word,
+                color,
+                alpha: 1,
+                distance: 0
+            });
+        }
+        fireworkBursts.push(burst);
+    }
+
+    function drawFireworks() {
+        fctx.clearRect(0, 0, fireworks.width, fireworks.height);
+        for (let b = fireworkBursts.length - 1; b >= 0; b--) {
+            const burst = fireworkBursts[b];
+            let allFaded = true;
+            for (let p of burst) {
+                const px = p.x + Math.cos(p.angle) * p.distance;
+                const py = p.y + Math.sin(p.angle) * p.distance;
+                fctx.save();
+                fctx.font = `bold 24px Arial`;
+                fctx.textAlign = 'center';
+                fctx.globalAlpha = p.alpha;
+                // Degradado radial rojo para el texto
+                const grad = fctx.createLinearGradient(px-20, py-20, px+20, py+20);
+                grad.addColorStop(0, '#ff0000');
+                grad.addColorStop(0.3, '#ff1a1a');
+                grad.addColorStop(0.7, '#cc0000');
+                grad.addColorStop(1, '#990000');
+                fctx.fillStyle = grad;
+                fctx.shadowColor = '#ff6666';
+                fctx.shadowBlur = 16;
+                fctx.fillText(p.word, px, py);
+                fctx.restore();
+                p.distance += p.speed;
+                p.alpha -= 0.025;
+                if (p.alpha > 0) allFaded = false;
+            }
+            if (allFaded) fireworkBursts.splice(b, 1);
+        }
+        requestAnimationFrame(drawFireworks);
+    }
+    drawFireworks();
+
+    document.addEventListener('click', (e) => {
+        createFirework(e.clientX, e.clientY);
+    });
+    </script>
+</body>
+</html> 
