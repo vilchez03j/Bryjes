@@ -12,6 +12,7 @@
             overflow: hidden;
             cursor: pointer;
             height: 100vh;
+            touch-action: none; /* Prevenir acciones táctiles predeterminadas */
         }
         canvas {
             display: block;
@@ -181,9 +182,32 @@
     }
     drawFireworks();
 
+    // Función para manejar tanto clics como toques
+    function handleInteraction(x, y) {
+        createFirework(x, y);
+    }
+
+    // Evento de clic para dispositivos de escritorio
     document.addEventListener('click', (e) => {
-        createFirework(e.clientX, e.clientY);
+        e.preventDefault();
+        handleInteraction(e.clientX, e.clientY);
     });
+
+    // Eventos táctiles para dispositivos móviles
+    document.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        handleInteraction(touch.clientX, touch.clientY);
+    }, { passive: false });
+
+    // Prevenir el comportamiento predeterminado de toques
+    document.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('touchend', (e) => {
+        e.preventDefault();
+    }, { passive: false });
     </script>
 </body>
 </html> 
